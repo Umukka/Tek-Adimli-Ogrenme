@@ -8,8 +8,6 @@ from tensorflow import expand_dims
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
 
-from skimage import io
-from skimage.transform import resize
 import skimage
 
 import random
