@@ -1,68 +1,49 @@
 from tensorflow.keras.applications import Xception, VGG19
-from tensorflow.keras import Model, Input, Sequential
-from tensorflow.keras.layers import *
-
-from tensorflow import expand_dims
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import Model, Sequential, layers
 import tensorflow as tf
 
-import numpy as np
 import cv2 as cv
-import skimage
-import random
 
 pretrained_model = Xception()
 pretrained_model.trainable = False
 
 input_shape = pretrained_model.input_shape
 
-layers = [] 
-for layer in pretrained_model.layers:
-  layers.append(layer)
 ind = -2
-extractor_layer = {"name": layers[ind].name, "index": ind}
+extractor_layer = {"name": pretrained_model.layers[ind].name, "index": ind}
 
 print("Xception:")
 print("input shape: "+str(input_shape)) 
-print(f"extractor layer: name={extractor_layer["name"]}, index={extractor_layer["index"]}")
+print(f"extractor layer: name={extractor_layer['name']}, index={extractor_layer['index']}")
+print('\n')
 
-"""
-pretrained_model = VGG19()
-pretrained_model.trainable = False
-
-input_shape = pretrained_model.input_shape
-
-layers = [] 
-for layer in pretrained_model.layers:
-  layers.append(layer)
-ind = -3
-extractor_layer = {"name":layers[ind].name, "index":ind}
-
-print("VGG16:")
-print("input shape: "+str(input_shape)) 
-print("extractor layer: name={}, index={}".format(extractor_layer["name"], extractor_layer["index"]))
-"""
-
-extractor_model = Model(inputs=pretrained_model.input,
-                        outputs=pretrained_model.get_layer(index=extractor_layer["index"]).output)
+extractor_model = Model(
+  inputs=pretrained_model.input,
+  outputs=pretrained_model.get_layer(index=extractor_layer["index"]).output
+)
 
 
 print("extractor model:")
 print("input shape: "+str(extractor_model.input_shape))
 print("output shape: "+str(extractor_model.output_shape))
+print('\n')
 
-normalize = tf.keras.Sequential([
-                                tf.keras.layers.experimental.preprocessing.Resizing(299,299),
-                                tf.keras.layers.experimental.preprocessing.Rescaling(1./255),
+normalize = Sequential([
+  layers.experimental.preprocessing.Resizing(299,299), 
+  layers.experimental.preprocessing.Rescaling(1./255),
 ])
 
-pos_img = cv.imread("/content/img1.jpg")
+positive_img_path = input('enter path for positive image: \n > ')
+negative_img_path = input('enter path for newgative image: \n > ')
+
+pos_img = cv.imread(positive_img_path)
 
 pos_img = tf.expand_dims(normalize(pos_img), 0)
-posf = extractor_model.predict(posimg)[0]
+pos_feature_map = extractor_model.predict(pos_img)[0]
 
-neg_img = cv.imread("/content/img2.jpg")
+neg_img = cv.imread(negative_img_path)
 
 neg_img = tf.expand_dims(normalize(neg_img), 0)
-negf = extractor_model.predict(neg_img)[0]
-abs(posf-negf).sum()/2048
+neg_feature_map = extractor_model.predict(neg_img)[0]
+
+print(abs(pos_feature_map-neg_feature_map).sum()/2048)
